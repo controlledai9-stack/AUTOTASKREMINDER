@@ -1,0 +1,56 @@
+name: Send Scheduled Progress Email
+
+# Cron times below are in UTC. They correspond to 9:00, 12:00, 15:00, 18:00,
+# and 21:00 IST (Asia/Kolkata, UTC+5:30). If you live in a different
+# timezone, recompute these five times for your own UTC offset - see
+# README.md ("Adjusting Schedule Times") for the exact conversion steps.
+on:
+  schedule:
+    - cron: "30 3 * * *"   # 09:00 IST
+    - cron: "30 6 * * *"   # 12:00 IST
+    - cron: "30 9 * * *"   # 15:00 IST
+    - cron: "30 12 * * *"  # 18:00 IST
+    - cron: "30 15 * * *"  # 21:00 IST
+  workflow_dispatch: {}  # allows manually triggering a run from the Actions tab
+
+# Required so the final step can commit the updated database back to the
+# repo. If your repo's Settings -> Actions -> General -> "Workflow
+# permissions" is set to "Read repository contents permission" (the
+# default for repos created after Feb 2023), this block overrides that for
+# this workflow specifically. You can also set it globally in that same
+# settings page and remove this block, but keeping it explicit here means
+# the workflow works correctly regardless of the repo-level default.
+permissions:
+  contents: write
+
+jobs:
+  send-progress-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send progress update email
+        env:
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          APP_TIMEZONE: "Asia/Kolkata"
+        run: python scheduler/send_update.py --type progress
+
+      - name: Commit updated database (streak/log data)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/tracker.db
+          git diff --quiet --cached || git commit -m "chore: update tracker data [skip ci]"
+          git push

@@ -1,0 +1,31 @@
+# Environment variables & secrets - NEVER commit these
+.env
+
+# NOTE ON data/tracker.db:
+# This project intentionally does NOT ignore data/tracker.db. GitHub
+# Actions runs in a fresh checkout of this repository with no access to
+# your local machine, so the SQLite database must be committed to the repo
+# for the scheduled workflows to see your current tasks and to persist
+# streak/email history between runs. See docs/ARCHITECTURE.md for the
+# full explanation and alternatives (e.g. a hosted database) if you'd
+# rather not commit task data to source control.
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
+# Streamlit
+.streamlit/secrets.toml
